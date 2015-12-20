@@ -63,7 +63,7 @@ activitybyday <- activity[, .(stepsday=sum(steps)), by=date] #
 ```
 ### histogram of the steps per day 
 ```{r histsteps}
-hist(activitybyday[, stepsday], breaks=7, col=blues9, main = paste0("Steps per Day (", activitybyday[1,date], " - ", activitybyday[.N,date],")"), xlab = "total number of steps")
+hist(activitybyday[, stepsday], breaks=25, xlim=c(0,25000), ylim=c(0,20), col=blues9, main = paste0("Steps per Day (", activitybyday[1,date], " - ", activitybyday[.N,date],")"), xlab = "total number of steps")
 ```
 
 ### mean and median 
@@ -114,8 +114,10 @@ The mean activity per day reported by the activitytracker corrected for missing 
 
 ### histogram of the steps imputed per day 
 ```{r histstepsimputed}
-hist(activityimputedbyday[, stepsimputedday], breaks=7, col=blues9, main = paste0("Steps imputed per Day (", activityimputedbyday[1,date], " - ", activityimputedbyday[.N,date],")"), xlab = "total number of steps imputed")
-```
+hist(activityimputedbyday[, stepsimputedday], breaks=25, xlim=c(0,25000), ylim=c(0,20), col=blues9, main = paste0("Steps imputed per Day (", activityimputedbyday[1,date], " - ", activityimputedbyday[.N,date],")"), xlab = "total number of steps imputed")
+```  
+
+The histogram for the imputed steps values shows a different distribution of total number of steps than the histogram for the raw total number containing NAs. The Frequency for the 10000 to 11000 range is now 18 instead of 10. This could be caused by imputing whole days of NAs with means of the other days intervals. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 

@@ -51,7 +51,7 @@ print(xt, type="HTML")
 ```
 
 <!-- html table generated in R 3.2.3 by xtable 1.8-0 package -->
-<!-- Sun Dec 20 23:37:48 2015 -->
+<!-- Mon Dec 21 00:13:18 2015 -->
 <table border=1>
 <tr> <th>  </th> <th> steps </th> <th> date </th> <th> interval </th>  </tr>
   <tr> <td align="right"> 1 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1100 </td> </tr>
@@ -78,7 +78,7 @@ activitybyday <- activity[, .(stepsday=sum(steps)), by=date] #
 ### histogram of the steps per day 
 
 ```r
-hist(activitybyday[, stepsday], breaks=7, col=blues9, main = paste0("Steps per Day (", activitybyday[1,date], " - ", activitybyday[.N,date],")"), xlab = "total number of steps")
+hist(activitybyday[, stepsday], breaks=25, xlim=c(0,25000), ylim=c(0,20), col=blues9, main = paste0("Steps per Day (", activitybyday[1,date], " - ", activitybyday[.N,date],")"), xlab = "total number of steps")
 ```
 
 ![](PA1_template_files/figure-html/histsteps-1.png) 
@@ -137,10 +137,12 @@ The mean activity per day reported by the activitytracker corrected for missing 
 ### histogram of the steps imputed per day 
 
 ```r
-hist(activityimputedbyday[, stepsimputedday], breaks=7, col=blues9, main = paste0("Steps imputed per Day (", activityimputedbyday[1,date], " - ", activityimputedbyday[.N,date],")"), xlab = "total number of steps imputed")
+hist(activityimputedbyday[, stepsimputedday], breaks=25, xlim=c(0,25000), ylim=c(0,20), col=blues9, main = paste0("Steps imputed per Day (", activityimputedbyday[1,date], " - ", activityimputedbyday[.N,date],")"), xlab = "total number of steps imputed")
 ```
 
 ![](PA1_template_files/figure-html/histstepsimputed-1.png) 
+
+The histogram for the imputed steps values shows a different distribution of total number of steps than the histogram for the raw total number containing NAs. The Frequency for the 10000 to 11000 range is now 18 instead of 10. This could be caused by imputing whole days of NAs with means of the other days intervals. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
