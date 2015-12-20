@@ -1,15 +1,6 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-author: gsgxnet
-output: 
-  html_document:
-    keep_md: true
-    toc: yes
----
-```{r setoptions, echo=FALSE}
-library(knitr)
-opts_chunk$set(echo=TRUE, results="show")  # make all R scripts chunks and their results visible in the knitted document
-```
+# Reproducible Research: Peer Assessment 1
+gsgxnet  
+
 
 ## Introduction
 
@@ -21,13 +12,15 @@ to load and process the data we need to prepare our environment with the
 needed libraries and setup some variables and functions.  
 
 ### Load libraries
-```{r setup}
+
+```r
 library(data.table)  # keep all datasets in an optimal structure 
 library(xtable)  # visualize tables
 library(lattice)  # plot panels
 ```
 ### Get data 
-```{r getdata}
+
+```r
 unzip("activity.zip")
 ```
 
@@ -35,7 +28,8 @@ unzip("activity.zip")
 
 ### load data into a data.table
 
-```{r readdata}
+
+```r
 activity <- fread("activity.csv", header = TRUE)
 ```
 The variables included in this dataset are:
@@ -50,48 +44,75 @@ The variables included in this dataset are:
     measurement was taken  
     
 ### a tiny subset of the data as a preview
-```{r showdata, results='asis'}
+
+```r
 xt <- xtable(activity[date=="2012-10-04" & interval >= 1100 & interval < 1200,])
 print(xt, type="HTML")
 ```
 
+<!-- html table generated in R 3.2.3 by xtable 1.8-0 package -->
+<!-- Sun Dec 20 23:37:48 2015 -->
+<table border=1>
+<tr> <th>  </th> <th> steps </th> <th> date </th> <th> interval </th>  </tr>
+  <tr> <td align="right"> 1 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1100 </td> </tr>
+  <tr> <td align="right"> 2 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1105 </td> </tr>
+  <tr> <td align="right"> 3 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1110 </td> </tr>
+  <tr> <td align="right"> 4 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1115 </td> </tr>
+  <tr> <td align="right"> 5 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1120 </td> </tr>
+  <tr> <td align="right"> 6 </td> <td align="right"> 180 </td> <td> 2012-10-04 </td> <td align="right"> 1125 </td> </tr>
+  <tr> <td align="right"> 7 </td> <td align="right">  21 </td> <td> 2012-10-04 </td> <td align="right"> 1130 </td> </tr>
+  <tr> <td align="right"> 8 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1135 </td> </tr>
+  <tr> <td align="right"> 9 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1140 </td> </tr>
+  <tr> <td align="right"> 10 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1145 </td> </tr>
+  <tr> <td align="right"> 11 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1150 </td> </tr>
+  <tr> <td align="right"> 12 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1155 </td> </tr>
+   </table>
+
 ## What is mean total number of steps taken per day?
 
 ### process raw to analysis data
-```{r databyday}
+
+```r
 activitybyday <- activity[, .(stepsday=sum(steps)), by=date] # 
 ```
 ### histogram of the steps per day 
-```{r histsteps}
+
+```r
 hist(activitybyday[, stepsday], breaks=7, col=blues9, main = paste0("Steps per Day (", activitybyday[1,date], " - ", activitybyday[.N,date],")"), xlab = "total number of steps")
 ```
 
+![](PA1_template_files/figure-html/histsteps-1.png) 
+
 ### mean and median 
 
-```{r}
+
+```r
 stepsdaymean <- mean(activitybyday[, stepsday], na.rm = TRUE)
 stepsdaymedian <- median(activitybyday[, stepsday], na.rm = TRUE)
 ```
-The mean activity per day reported by the activitytracker is `r as.character(round(stepsdaymean, digits=1))` steps.  Their median is `r stepsdaymedian`. 
+The mean activity per day reported by the activitytracker is 10766.2 steps.  Their median is 10765. 
 
 
 ## What is the average daily activity pattern?
 
 ### process raw to analysis data
-```{r activitybyinterval}
+
+```r
 activitybyinterval <- activity[, .(stepsintvmean=mean(steps,na.rm = TRUE)), by=interval]
 stepsintvmax <- max(activitybyinterval[, stepsintvmean], na.rm = TRUE)
 stepsintvmaxintv <- activitybyinterval[which.max(stepsintvmean), ]
-
 ```
-The interval of the day with the maximum mean number of steps is `r stepsintvmaxintv$interval`. For that timeslot the mean over all days is `r stepsintvmaxintv$stepsintvmean` steps.
+The interval of the day with the maximum mean number of steps is 835. For that timeslot the mean over all days is 206.1698113 steps.
 
 ### timeline of daily activity
-```{r plotbyinterval}
+
+```r
 plot(activitybyinterval,type="l", main = "steps per 5 min interval means ", xlab = "time of day interval", ylab = "mean number of steps" )
 grid()
 points(stepsintvmaxintv$interval, stepsintvmaxintv$stepsintvmean, col="blue", pch=21, bg = "red")
 ```
+
+![](PA1_template_files/figure-html/plotbyinterval-1.png) 
 
 
 ## Imputing missing values
@@ -100,7 +121,8 @@ points(stepsintvmaxintv$interval, stepsintvmaxintv$stepsintvmean, col="blue", pc
 
 There are missing values (NAs) in the original datasets. The presence of missing days may introduce bias into some calculations or summaries of the data. We can improve on that possible bias by replacing a missing value in an day-interval by the mean value of that interval calculated over all other days fow which a value exists. A new dataset for analysis and the days mean and median are calculated.  
 
-```{r}
+
+```r
 activityimputed <- activity # create a copy of the dataset
 # calculated a new column in the dataset 
 # containig either the mean of steps for that interval over all days if the number of steps is NA 
@@ -110,18 +132,22 @@ activityimputedbyday <- activityimputed[, .(stepsimputedday=sum(stepsimputed)), 
 stepsimputeddaymean <- mean(activityimputedbyday[, stepsimputedday])
 stepsimputeddaymedian <- median(activityimputedbyday[, stepsimputedday])
 ```
-The mean activity per day reported by the activitytracker corrected for missing values is `r as.character(round(stepsimputeddaymean, digits=1))` steps.  Their median is `r as.character(round(stepsimputeddaymedian, digits=1))`. Compared to the mean of steps without correction there is no difference. Comparing medians, the median after imputing is 1.2 steps higher than the median calculated without correction. This kind of NA replacement has no impact on the calculated mean activity per day and an non significant impact on the median.  
+The mean activity per day reported by the activitytracker corrected for missing values is 10766.2 steps.  Their median is 10766.2. Compared to the mean of steps without correction there is no difference. Comparing medians, the median after imputing is 1.2 steps higher than the median calculated without correction. This kind of NA replacement has no impact on the calculated mean activity per day and an non significant impact on the median.  
 
 ### histogram of the steps imputed per day 
-```{r histstepsimputed}
+
+```r
 hist(activityimputedbyday[, stepsimputedday], breaks=7, col=blues9, main = paste0("Steps imputed per Day (", activityimputedbyday[1,date], " - ", activityimputedbyday[.N,date],")"), xlab = "total number of steps imputed")
 ```
+
+![](PA1_template_files/figure-html/histstepsimputed-1.png) 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ### process raw to analysis data
 
-```{r weekdays}
+
+```r
 activityimputedWd <- activityimputed # create a copy of the working dataset
 # create a new column in the dataset marking every row as either weekday or weekend 
 activityimputedWd[, `:=`(wkdayend = as.factor(ifelse(weekdays(as.Date(date), abbreviate = TRUE) %in% c("Sat","Sun"),"weekend","weekday")))]
@@ -131,10 +157,13 @@ activityimputedbyinterval <- activityimputedWd[, .(stepsimputedintvmean=mean(ste
 
 ### activity pattern plot for weekdays and weekends
 
-```{r weekdayendplot}
+
+```r
 library(lattice)
 xyplot(activityimputedbyinterval$stepsimputedintvmean ~ activityimputedbyinterval$interval | activityimputedbyinterval$wkdayend, layout = c(1, 2), xlab = "Interval", ylab = "Number of steps", type="l")
 ```
+
+![](PA1_template_files/figure-html/weekdayendplot-1.png) 
 
 ### Summary
 
