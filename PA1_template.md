@@ -21,7 +21,7 @@ library(lattice)  # plot panels
 ### Get data 
 
 ```r
-unzip("activity.zip")
+unzip("activity.zip", setTimes = TRUE)
 ```
 
 ## Loading and preprocessing the data
@@ -46,12 +46,12 @@ The variables included in this dataset are:
 ### a tiny subset of the data as a preview
 
 ```r
-xt <- xtable(activity[date=="2012-10-04" & interval >= 1100 & interval < 1200,])
+xt <- xtable(activity[date=="2012-10-04" & interval >= 1100 & interval <= 1200,])
 print(xt, type="HTML")
 ```
 
 <!-- html table generated in R 3.2.3 by xtable 1.8-0 package -->
-<!-- Mon Dec 21 00:13:18 2015 -->
+<!-- Wed Jan  6 00:16:24 2016 -->
 <table border=1>
 <tr> <th>  </th> <th> steps </th> <th> date </th> <th> interval </th>  </tr>
   <tr> <td align="right"> 1 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1100 </td> </tr>
@@ -66,7 +66,10 @@ print(xt, type="HTML")
   <tr> <td align="right"> 10 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1145 </td> </tr>
   <tr> <td align="right"> 11 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1150 </td> </tr>
   <tr> <td align="right"> 12 </td> <td align="right">   0 </td> <td> 2012-10-04 </td> <td align="right"> 1155 </td> </tr>
+  <tr> <td align="right"> 13 </td> <td align="right"> 160 </td> <td> 2012-10-04 </td> <td align="right"> 1200 </td> </tr>
    </table>
+The "interval" is a label for the 5-minute interval, not a (date)time-object.
+The interval can be directly used as an x-axis value for plotting, but will not result in equidistant intervals in the plot. For the interval plots within this document a decimal hour+minute interval is calculated and used for the x-axis. The code for the standard plots is given as well but commented out. See comments.
 
 ## What is mean total number of steps taken per day?
 
@@ -98,18 +101,30 @@ The mean activity per day reported by the activitytracker is 10766.2 steps.  The
 ### process raw to analysis data
 
 ```r
+# convert interval to 1) a real time object and 2) to decimal hours
+activity[, intervalTime := as.ITime(formatC(interval, width = 4, flag = "0"), format = "%H%M")]
+activity[, intervalTimeDec := as.numeric(substr(formatC(interval, width = 4, flag = "0"),1,2)) + as.numeric(substr(formatC(interval, width = 4, flag = "0"),3,4))/60]
 activitybyinterval <- activity[, .(stepsintvmean=mean(steps,na.rm = TRUE)), by=interval]
+activitybyintervalTime <- activity[, .(stepsintvmean=mean(steps,na.rm = TRUE)), by=intervalTime]
+activitybyintervalTimeDec <- activity[, .(stepsintvmean=mean(steps,na.rm = TRUE)), by=intervalTimeDec]
 stepsintvmax <- max(activitybyinterval[, stepsintvmean], na.rm = TRUE)
 stepsintvmaxintv <- activitybyinterval[which.max(stepsintvmean), ]
+stepsintvmaxintvTimeDec <- activitybyintervalTimeDec[which.max(stepsintvmean), ]
 ```
 The interval of the day with the maximum mean number of steps is 835. For that timeslot the mean over all days is 206.1698113 steps.
 
 ### timeline of daily activity
 
 ```r
-plot(activitybyinterval,type="l", main = "steps per 5 min interval means ", xlab = "time of day interval", ylab = "mean number of steps" )
+# code for a plot very similar to the sample given in the instructions
+# omitted, as it will have not even spaced x axis intervals although
+# the data consists of even spaced time interval measurements
+#plot(activitybyinterval,type="l", main = "steps per 5 min interval means ", xlab = "time of day interval", ylab = "mean number of steps" )
+#grid()
+#points(stepsintvmaxintv$interval, stepsintvmaxintv$stepsintvmean, col="blue", pch=21, bg = "red")
+plot(activitybyintervalTimeDec,type="l", main = "Steps per 5 min interval means ", xaxs = "r", xlab = "time of day interval, decimal hours", ylab = "Mean number of steps" )
+points(stepsintvmaxintvTimeDec$interval, stepsintvmaxintvTimeDec$stepsintvmean, col="blue", pch=21, bg = "red")
 grid()
-points(stepsintvmaxintv$interval, stepsintvmaxintv$stepsintvmean, col="blue", pch=21, bg = "red")
 ```
 
 ![](PA1_template_files/figure-html/plotbyinterval-1.png) 
@@ -151,10 +166,16 @@ The histogram for the imputed steps values shows a different distribution of tot
 
 ```r
 activityimputedWd <- activityimputed # create a copy of the working dataset
-# create a new column in the dataset marking every row as either weekday or weekend 
-activityimputedWd[, `:=`(wkdayend = as.factor(ifelse(weekdays(as.Date(date), abbreviate = TRUE) %in% c("Sat","Sun"),"weekend","weekday")))]
+# create new columns in the dataset for
+# 1 abbreviated day of week
+# 2 marking every row as either weekday or weekend 
+# this implementation here works only for english and german locales
+# a more general implementation should use 
+# strftime(as.Date(date), format = "%u")
+activityimputedWd[, `:=`(wkday = weekdays(as.Date(date), abbreviate = TRUE), wkdayend = as.factor(ifelse(weekdays(as.Date(date), abbreviate = TRUE) %in% c("Sat","Sun", "Sa", "So"),"weekend","weekday")))]
 # calculate the interval means for weekdays and weekends
 activityimputedbyinterval <- activityimputedWd[, .(stepsimputedintvmean=mean(stepsimputed)), by=.(interval,wkdayend)]
+activityimputedbyintervalTimeDec <- activityimputedWd[, .(stepsimputedintvmean=mean(stepsimputed)), by=.(intervalTimeDec,wkdayend)]
 ```
 
 ### activity pattern plot for weekdays and weekends
@@ -162,11 +183,16 @@ activityimputedbyinterval <- activityimputedWd[, .(stepsimputedintvmean=mean(ste
 
 ```r
 library(lattice)
-xyplot(activityimputedbyinterval$stepsimputedintvmean ~ activityimputedbyinterval$interval | activityimputedbyinterval$wkdayend, layout = c(1, 2), xlab = "Interval", ylab = "Number of steps", type="l")
+# this code would produce a plot very similar to the instructions,
+# but again with uneven x-axis intervals, s.a..
+#xyplot(activityimputedbyinterval$stepsimputedintvmean ~ activityimputedbyinterval$interval | activityimputedbyinterval$wkdayend, layout = c(1, 2), xlab = "Interval", ylab = "Number of steps", type="l")
+# an implementation using decimal hours which has even spaced x-axis intervals
+# equivalent to the dataset
+xyplot(activityimputedbyintervalTimeDec$stepsimputedintvmean ~ activityimputedbyintervalTimeDec$intervalTimeDec | activityimputedbyintervalTimeDec$wkdayend, layout = c(1, 2),  main = "steps per 5 min interval means", xlab = "Interval (decimal hours)", ylab = "Number of steps", type="l")
 ```
 
 ![](PA1_template_files/figure-html/weekdayendplot-1.png) 
 
 ### Summary
 
-The patterns for weekends and weekdays look quite different. Further evaluation might reveal a statistical model to discern for a new days dataset whether it is data of a working day or not.
+The patterns for weekends and weekdays look quite different. Further evaluation might reveal a statistical model to discern for a new days activity dataset whether it is data of a working day or not.
